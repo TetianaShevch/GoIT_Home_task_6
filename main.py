@@ -19,9 +19,9 @@ import sort
 folder_to_scan = sys.argv[1]
 # folder_to_scan = 'Rubbish'
           
-sort.read_folder(Path(folder_to_scan), Path(folder_to_scan)) # Обробляємо директорію
+sort.read_folder(Path(folder_to_scan), Path(folder_to_scan)) # Обробляємо папку
 
-sort.handle_empty_folders(Path(folder_to_scan)) # після сортування файлів у директорії видаляємо пусті папки, що утворилися після упорядкування, і нормалізуємо назви файлів
+sort.handle_empty_folders(Path(folder_to_scan)) # після сортування файлів у папці видаляємо пусті папки, що утворилися після упорядкування, і нормалізуємо назви файлів
 
 # Друкуємо список файлів у категорії (музика, відео, фото та ін.)
 print(f'Images: {sort.images}') 

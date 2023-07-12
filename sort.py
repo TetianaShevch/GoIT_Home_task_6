@@ -64,7 +64,7 @@ EXTENSION = set()
 
 def read_folder(path: Path, folder_to_scan: Path) -> None:
     """
-    Функція виконує ітераційне зчитування заданої директорії (path), відправляючи на обробку файли з цієї і вкладених директорій.
+    Функція виконує ітераційне зчитування заданої папки (path), відправляючи на обробку файли з цієї і вкладених папок.
 
     Параметри path і folder_for_scan обов'язкові, передбачають тип даних Path.
     """
@@ -76,7 +76,7 @@ def read_folder(path: Path, folder_to_scan: Path) -> None:
             fullname = path / el.name
             handle_file(fullname, path, folder_to_scan)
 
-def handle_file(file: Path, path: Path, folder_to_scan: Path):
+def handle_file(file: Path, path: Path, folder_to_scan: Path) -> None:
     """
     Функція опрацьовує заданий файл (file) (приведення його назви у нормалізований вигляд і підбір відповідної папки для його переміщення).
 
@@ -84,31 +84,29 @@ def handle_file(file: Path, path: Path, folder_to_scan: Path):
     """
     file_name = file.name.split('.')[0]
     ext = file.suffix[1:]
-    # ext_upper = file.suffix[1:].upper()
-      
+         
     if not ext:  
-        my_others.append(file.name)
+        my_others.append(normalize(file.name))
         target_directory = folder_to_scan / 'My others'
         handle_folder(file, folder_to_scan, target_directory)
     else:
-        # name = normalize(file_name)+ '.' + ext
         name = file_name+ '.' + ext
         file = path / name
         try:
             container = REGISTER_EXTENSION[ext.upper()]
             EXTENSION.add(ext.upper())
-            container.append(file.name)
+            container.append(normalize(file.name))
             target_directory = folder_to_scan / DYRECTORY_NAME[ext.upper()]
             handle_folder(file, folder_to_scan, target_directory)
         except KeyError:
             unknown.append(ext)
-            my_others.append(file.name)
+            my_others.append(normalize(file.name))
             target_directory = folder_to_scan / 'My others'
             handle_folder(file, folder_to_scan, target_directory)
 
 def normalize(element: str) -> str:
     """
-    Функція в рядку element здійснює транслітерацію кирилиці на латинський алфавіт, а також Замінює всі символи, окрім латинських літер, цифр на '_'.
+    Функція здійснює в рядку elementтранслітерацію кирилиці на латинський алфавіт, а також Замінює всі символи, окрім латинських літер, цифр на '_'.
 
     Параметр element обов'язковий, передбачає тип даних String.
     """
@@ -130,26 +128,28 @@ def handle_folder(file: Path, folder_to_scan: Path, target_folder: Path) -> None
     Параметрм file, folder_to_scan і target_folder - обов'язкові, передбачають тип даних Path.
     """
     target_folder.mkdir(exist_ok=True, parents=True)
-    file.replace(target_folder / normalize(file.name))
-    
-def handle_archive(file: Path) -> None:
+    if target_folder == folder_to_scan / 'Archives':
+        handle_archive(file, target_folder)
+    else:
+        file.replace(target_folder / normalize(file.name))
+   
+def handle_archive(file: Path, target_folder: Path) -> None:
     """
-    Функція створює папку і розпаковує в неї архів (filename).
+    Функція створює папку і розпаковує в неї архів (file).
 
-    Параметр file обов'язковий, передбачає тип даних Path.
+    Параметри file і target_folder обов'язкові, передбачають тип даних Path.
     """
-    archive_dir = Path('Archive')
-    archive_dir.mkdir(exist_ok=True, parents=True) 
-    folder_for_file = archive_dir / normalize(file.name.replace(file.suffix,''))
+    archive_name = normalize(file.name.replace(file.suffix,''))
+    folder_for_file = target_folder / archive_name
     folder_for_file.mkdir(exist_ok=True, parents=True)
-    print(f'folder_for_file = {folder_for_file}')
-    archives.append(file.name)
+    # archives.append(normalize(file.name))
     try:
         shutil.unpack_archive(file, folder_for_file)
-
+        rename_files_and_folders(folder_for_file)
     except shutil.ReadError:
         print('It is not archive')
         folder_for_file.rmdir()
+    print(f'archive = {file}')
     file.unlink()
 
 def handle_empty_folders(path: Path) -> None:
@@ -165,4 +165,17 @@ def handle_empty_folders(path: Path) -> None:
             except:
                 print('The folder is not emty')
                 
+def rename_files_and_folders(path: Path) -> None:
+    """
+    Функція нормалізує назви усіх папок і файлів у заданій папці (path).
     
+    Параметр path обов'язковий, передбачає тип даних Path.
+    """
+    for el in path.iterdir():
+        if el.is_dir():
+            path = el.replace(path / normalize(el.name))
+            rename_files_and_folders(path)
+        else:
+            el.replace(path / normalize(el.name))
+
+                    
